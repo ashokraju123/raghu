@@ -1,0 +1,26 @@
+task runNUnit << {
+    FileTree tree = fileTree(dir: 'Test', 
+    includes: ['**/bin/Debug/**/[ProjectName]*UnitTest.dll', 
+    '**/bin/Debug/**/[Project]*IntTest.dll', 
+    'Framework/[Project]/bin/Debug/[Project].dll'], exclude:['**/bin/Debug/**/*[Project].dll'])
+    int i = 0
+    def reportDir = "${buildDir}\\report\\nunit"
+    def executedDll = []
+    file(reportDir).mkdirs()
+    tree.each { path ->
+        if(!executedDll.contains(path.name)){
+            def stdout = new ByteArrayOutputStream()
+            def s = "External\\Tools\\NUnit\\nunit-console.exe 
+            \"$path\" /noshadow /xml:\"$reportDir\\${path.name}.xml\" /framework:net-4.0"
+            println s
+            exec {
+                commandLine 'cmd', '/c', s
+                standardOutput = stdout
+            }
+            executedDll.add(path.name)
+            println "Output:\n$stdout"
+        }
+        else{
+            println "Excluded already executed dll $path.name"
+        }
+    }
